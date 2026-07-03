@@ -51,6 +51,8 @@ squares. Handles regular and irregular sampling through the \code{min_no_pairs}
 reliability cutoff (pairs with fewer co-observations are dropped).
 }
 \references{
-Dey D., Ghosal R., Merikangas K., Zipunnikov V. (2024)
-\doi{10.1002/sim.10240}
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+"Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
 }

@@ -24,6 +24,9 @@ mpfpca(
 
 \item{df}{Integer; B-spline degrees of freedom per margin.}
 
+\item{min_no_pairs}{Minimum number of co-observed pairs required per
+(s, t) cell in the marginal covariance fits.}
+
 \item{ridge}{Optional ridge passed to \code{getLatentPreds} if the installed
 SGCTools supports it (stabilises the per-subject BLUP solve for poorly
 estimated margins). Ignored otherwise.}
@@ -41,4 +44,10 @@ trajectory matrices).
 Two-stage variant: estimate each variable's marginal covariance and latent
 trajectories, then run a partially separable FPCA (\code{fgm::pfpca}) on the
 concatenated latent predictions. Requires the suggested package \pkg{fgm}.
+}
+\references{
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+"Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
 }

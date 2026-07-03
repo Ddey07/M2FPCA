@@ -14,10 +14,10 @@
 #' sampling are both supported via the `min_no_pairs` reliability cutoff.
 #'
 #' @references
-#' Dey D., Ghosal R., Merikangas K., Zipunnikov V. (2024) "Functional Principal
-#' Component Analysis for Continuous Non-Gaussian, Truncated, and Discrete
-#' Functional Data." Statistics in Medicine, 43, 5431-5445.
-#' \doi{10.1002/sim.10240}
+#' Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026) "Multivariate
+#' Functional Principal Component Analysis for Mixed-Type mHealth Data: An
+#' Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#' \url{https://arxiv.org/abs/2603.11385}
 #'
 #' @keywords internal
 #' @importFrom SGCTools fpca.sgc.lat getLatentPreds Kendall_mixed

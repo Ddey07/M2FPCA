@@ -1,0 +1,18 @@
+citHeader("To cite the M2FPCA package in publications, use:")
+
+bibentry(
+  bibtype = "Article",
+  title   = "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth Data: An Application to Mood Disorders",
+  author  = c(person("Debangan", "Dey"),
+              person("Rahul", "Ghosal"),
+              person("Kathleen", "Merikangas"),
+              person("Vadim", "Zipunnikov")),
+  journal = "arXiv preprint arXiv:2603.11385",
+  year    = "2026",
+  url     = "https://arxiv.org/abs/2603.11385",
+  textVersion = paste(
+    "Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026).",
+    "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth Data:",
+    "An Application to Mood Disorders. arXiv preprint arXiv:2603.11385."
+  )
+)

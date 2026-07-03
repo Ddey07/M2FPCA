@@ -10,10 +10,18 @@ cov.from.mpfpca.dir(mpf)
 \item{mpf}{Output of \code{\link[=mpfpca.dir]{mpfpca.dir()}}.}
 }
 \value{
-An (mp)-by-(mp) covariance matrix.
+An (mp)-by-(mp) covariance matrix. Its diagonal is the estimated
+variance surface (close to, but not exactly, one); apply \code{\link[stats:cov2cor]{stats::cov2cor()}}
+for a unit-diagonal correlation surface.
 }
 \description{
 Rebuilds the full (mp)-by-(mp) covariance surface from the partially separable
 representation returned by \code{\link[=mpfpca.dir]{mpfpca.dir()}} (shared eigenfunctions \code{phi} and the
 per-component cross-variable score covariances \code{S}).
+}
+\references{
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+"Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
 }

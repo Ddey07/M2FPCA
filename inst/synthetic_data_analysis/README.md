@@ -1,10 +1,11 @@
 # Synthetic mHealth analysis with **M2FPCA**
 
 An end-to-end, fully reproducible pipeline that **mimics** the mobile-health data
-analysis in Dey, Ghosal, Merikangas & Zipunnikov (2024), *Multivariate Functional
+analysis in Dey, Ghosal, Merikangas & Zipunnikov (2026), *Multivariate Functional
 Principal Component Analysis for Mixed-Type mHealth Data: An Application to Mood
-Disorders* — using only **synthetic data**. No real participant data from the NIMH
-Family Study is used or distributed here.
+Disorders* ([arXiv:2603.11385](https://arxiv.org/abs/2603.11385)) — using only
+**synthetic data**. No real participant data from the NIMH Family Study is used
+or distributed here.
 
 The pipeline exercises every exported function in the package on a mixed-type,
 irregularly-sampled, multivariate functional dataset and reproduces the paper's

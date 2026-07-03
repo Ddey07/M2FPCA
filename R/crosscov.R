@@ -28,8 +28,10 @@
 #'     \item{vcov}{variance-covariance matrix of the fitted spline coefficients}
 #'     \item{par}{the fitted `nlsLM` object}
 #'   }
-#' @references Dey D., Ghosal R., Merikangas K., Zipunnikov V. (2024)
-#'   \doi{10.1002/sim.10240}
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 pfpca_crosscov <- function(dat_list, type, argvals = NULL,
                            df = 5, min_no_pairs = 30, weights = TRUE) {

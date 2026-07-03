@@ -21,16 +21,16 @@ scores (\code{\link[=mpfpca_scores]{mpfpca_scores()}}). Regular and irregular (s
 sampling are both supported via the \code{min_no_pairs} reliability cutoff.
 }
 \references{
-Dey D., Ghosal R., Merikangas K., Zipunnikov V. (2024) "Functional Principal
-Component Analysis for Continuous Non-Gaussian, Truncated, and Discrete
-Functional Data." Statistics in Medicine, 43, 5431-5445.
-\doi{10.1002/sim.10240}
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026) "Multivariate
+Functional Principal Component Analysis for Mixed-Type mHealth Data: An
+Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/Ddey07/SGCTools}
-  \item Report bugs at \url{https://github.com/Ddey07/SGCTools/issues}
+  \item \url{https://github.com/Ddey07/M2FPCA}
+  \item Report bugs at \url{https://github.com/Ddey07/M2FPCA/issues}
 }
 
 }
@@ -39,6 +39,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Debangan Dey \email{ddey1@alumni.jh.edu} (\href{https://orcid.org/0000-0002-2579-5693}{ORCID})
   \item Rahul Ghosal \email{rghosal@mailbox.sc.edu} (\href{https://orcid.org/0000-0003-0939-4731}{ORCID})
 }
 

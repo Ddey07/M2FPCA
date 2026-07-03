@@ -51,3 +51,9 @@ variable's latent continuous trajectory with \code{\link[SGCTools:getLatentPreds
 from an \code{\link[=mpfpca.dir]{mpfpca.dir()}} fit:
 \eqn{\theta_{i v \ell} = \int L_{v i}(t)\,\phi_\ell(t)\,dt}.
 }
+\references{
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+"Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
+}

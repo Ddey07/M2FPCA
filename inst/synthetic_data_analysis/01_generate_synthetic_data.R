@@ -3,7 +3,7 @@
 #
 # Synthetic mHealth data that MIMICS (does not reproduce) the NIMH Family Study
 # of Mood and Affective Spectrum Disorders analysed in Dey, Ghosal, Merikangas &
-# Zipunnikov (2024).  NO REAL PARTICIPANT DATA IS USED.
+# Zipunnikov (2026), arXiv:2603.11385.  NO REAL PARTICIPANT DATA IS USED.
 #
 # Design mirrored from the paper (Section 4):
 #   * p = 4 mixed-type functional domains, observed on a common daily grid of

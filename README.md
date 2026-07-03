@@ -212,8 +212,17 @@ fit_irr$L
 `L`, `raw_est` (raw block covariance), `raw_est_cov` (its delta-method
 variance), and `cov_marginal`.
 
-## Reference
+## Citation
 
+If you use M²FPCA, please cite:
+
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026).
+*Multivariate Functional Principal Component Analysis for Mixed-Type
+mHealth Data: An Application to Mood Disorders.* **arXiv preprint
+arXiv:2603.11385**.
+[arXiv:2603.11385](https://arxiv.org/abs/2603.11385)
+
+The single-variable estimator this package builds on is described in
 Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2024).
 *Functional Principal Component Analysis for Continuous Non-Gaussian,
 Truncated, and Discrete Functional Data.* **Statistics in Medicine**,

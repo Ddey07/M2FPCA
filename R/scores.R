@@ -34,6 +34,10 @@
 #'     \item{scores_wide}{an n-by-(npc*p) matrix, components grouped}
 #'     \item{latent}{list of `p` latent-trajectory matrices (n by m)}
 #'   }
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca_scores <- function(dat_list, type, mpf, argvals, npc = NULL,
                           ridge = 0.05, zcap = 8, impute.missing = FALSE) {
@@ -87,6 +91,10 @@ mpfpca_scores <- function(dat_list, type, mpf, argvals, npc = NULL,
 #' @param pf A partially separable FPCA object with elements `L` (number of
 #'   components), `theta` (list of component scores) and `phi` (eigenfunctions).
 #' @return The implied covariance matrix.
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 sigma_from_fpca <- function(pf) {
   L <- pf$L
@@ -110,6 +118,10 @@ sigma_from_fpca <- function(pf) {
 #' @param ... Passed to the marginal `fpca.sgc.lat` calls.
 #' @return A list with `pf` (the `fgm::pfpca` object) and `L` (list of latent
 #'   trajectory matrices).
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca <- function(dat_list, type, argvals, df, min_no_pairs = 30,
                    ridge = 0.05, zcap = 8, ...) {

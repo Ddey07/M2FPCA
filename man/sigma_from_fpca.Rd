@@ -18,3 +18,9 @@ Assembles the multivariate covariance \eqn{\sum_\ell \mathrm{cov}(\theta_\ell)
 \otimes \phi_\ell \phi_\ell^\top} from a partially separable FPCA fit \code{pf}
 (e.g. the output of \code{fgm::pfpca}), as used by the ps-M2FPCA variant.
 }
+\references{
+Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+"Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+\url{https://arxiv.org/abs/2603.11385}
+}

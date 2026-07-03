@@ -41,7 +41,10 @@
 #'     \item{raw_est}{the raw (mp)-by-(mp) block covariance estimate}
 #'     \item{raw_est_cov}{delta-method variance of `raw_est` (vectorised)}
 #'   }
-#' @references Dey D., Ghosal R., Merikangas K., Zipunnikov V. (2024) \doi{10.1002/sim.10240}
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
                        weights = TRUE, min_no_pairs = 30, ...) {
@@ -135,7 +138,13 @@ mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
 #' per-component cross-variable score covariances `S`).
 #'
 #' @param mpf Output of [mpfpca.dir()].
-#' @return An (mp)-by-(mp) covariance matrix.
+#' @return An (mp)-by-(mp) covariance matrix. Its diagonal is the estimated
+#'   variance surface (close to, but not exactly, one); apply [stats::cov2cor()]
+#'   for a unit-diagonal correlation surface.
+#' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
+#'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+#'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
+#'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 cov.from.mpfpca.dir <- function(mpf) {
   p <- nrow(mpf$S[[1]])

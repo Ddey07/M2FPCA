@@ -2,8 +2,9 @@
 # run_all.R  --  end-to-end synthetic M2FPCA mHealth analysis
 #
 # Reproduces (on fully synthetic data) the workflow of Dey, Ghosal, Merikangas &
-# Zipunnikov (2024), "Multivariate Functional Principal Component Analysis for
-# Mixed-Type mHealth Data": estimate the joint covariance of mixed-type
+# Zipunnikov (2026), "Multivariate Functional Principal Component Analysis for
+# Mixed-Type mHealth Data: An Application to Mood Disorders" (arXiv:2603.11385):
+# estimate the joint covariance of mixed-type
 # EMA + actigraphy functional data, extract shared principal components,
 # compute subject-level scores as digital biomarkers, and use them to predict
 # diagnostic group.
