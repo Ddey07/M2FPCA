@@ -1,0 +1,22 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# build artifacts
+/*.tar.gz
+/*.Rcheck/
+..Rcheck/
+src/*.o
+src/*.so
+src/*.dll
+
+# generated analysis outputs (scripts regenerate these)
+inst/synthetic_data_analysis/output/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~

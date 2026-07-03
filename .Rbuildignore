@@ -1,0 +1,5 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^dev_smoke_test\.R$
+^BUILD_NOTES\.md$
+^LICENSE\.md$

@@ -1,0 +1,55 @@
+Package: M2FPCA
+Type: Package
+Title: Multivariate Functional Principal Component Analysis for Mixed-Type Functional Data
+Version: 0.1.0
+Authors@R: c(
+    person(given = "Debangan",
+           family = "Dey",
+           role = c("aut", "cre"),
+           email = "ddey1@alumni.jh.edu",
+           comment = c(ORCID = "0000-0002-2579-5693")),
+    person(given = "Rahul",
+           family = "Ghosal",
+           role = "aut",
+           email = "rghosal@mailbox.sc.edu",
+           comment = c(ORCID = "0000-0003-0939-4731")),
+    person(given = "Kathleen",
+           family = "Merikangas",
+           role = "fnd",
+           email = "merikank@mail.nih.gov"),
+    person(given = "Vadim",
+           family = "Zipunnikov",
+           role = "ctb",
+           email = "vzipunn1@jhu.edu"))
+Maintainer: Debangan Dey <ddey1@alumni.jh.edu>
+Description: Joint covariance estimation and multivariate functional principal
+    component analysis (M2FPCA) for multivariate mixed-type functional data
+    (continuous, truncated, ordinal, and binary) measured on a common grid,
+    based on the latent Semiparametric Gaussian Copula process. Estimates
+    marginal and cross-covariance surfaces between functional variables of
+    possibly different types, a partially separable multivariate
+    Karhunen-Loeve representation, and multivariate principal-component scores.
+    Builds on the single-variable estimator in the 'SGCTools' package and
+    handles regular and irregular (sparse / asynchronous) sampling. Methods
+    described in Dey, Ghosal, Merikangas and Zipunnikov (2024)
+    <doi:10.1002/sim.10240>.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/Ddey07/M2FPCA
+BugReports: https://github.com/Ddey07/M2FPCA/issues
+Imports:
+    SGCTools,
+    fda,
+    minpack.lm,
+    Matrix,
+    mvtnorm,
+    fMultivar,
+    mixedCCA
+Suggests:
+    fgm,
+    clusterGeneration,
+    testthat (>= 3.0.0)
+Remotes:
+    Ddey07/SGCTools
