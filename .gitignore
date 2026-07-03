@@ -15,6 +15,9 @@ src/*.dll
 
 # generated analysis outputs (scripts regenerate these)
 inst/synthetic_data_analysis/output/
+# knit cache for analysis.Rmd (recomputed on demand)
+inst/synthetic_data_analysis/analysis_cache/
+inst/synthetic_data_analysis/analysis_files/
 
 # OS / editor cruft
 .DS_Store

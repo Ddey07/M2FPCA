@@ -37,6 +37,12 @@ qualitative findings at a small, fast scale.
   prediction of diagnostic group with a train/test split.
 - `04_figures.R` — renders the six figures below (base graphics only).
 - `run_all.R` — runs all four steps in order.
+- `analysis.Rmd` / `analysis.html` — a narrative, **step-by-step** report:
+  data generation, data exploration, then the M²FPCA analysis (fit →
+  eigenfunctions → covariance recovery → scores → prediction) with prose between
+  every step. The rendered `analysis.html` is self-contained; open it in a
+  browser. Re-knit with `rmarkdown::render("analysis.Rmd")` (the two slow steps
+  cache to `analysis_cache/`; delete it to recompute from scratch).
 
 ## Run it
 

@@ -1,0 +1,387 @@
+---
+title: "Synthetic mHealth Analysis with M²FPCA"
+subtitle: "A step-by-step walk-through: data exploration to digital biomarkers"
+author: "M2FPCA package"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    theme: flatly
+    highlight: tango
+    fig_width: 8
+    fig_height: 4.5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.align = "center", dpi = 110)
+options(width = 100)
+suppressMessages(library(M2FPCA))
+
+# Heavy steps (the M2FPCA fit and the per-subject latent prediction) are cached
+# to `analysis_cache/`. If the cache exists this document knits in seconds; if
+# not, every step is computed from scratch (a couple of minutes, dominated by
+# the ordinal truncated-normal integrals). Delete `analysis_cache/` to force a
+# full recompute.
+cache <- "analysis_cache"
+dir.create(cache, showWarnings = FALSE)
+```
+
+# Introduction
+
+This document reproduces, **step by step and on fully synthetic data**, the
+mobile-health (mHealth) analysis of Dey, Ghosal, Merikangas & Zipunnikov (2026),
+*Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders*
+([arXiv:2603.11385](https://arxiv.org/abs/2603.11385)). **No real participant
+data from the NIMH Family Study is used or shown here** — everything below is
+generated from a known statistical model so that we can check the method against
+ground truth.
+
+The scientific setup mirrors the paper: each participant-day is summarised by
+**four functional domains** measured through the waking day,
+
+| Domain | Type | Source |
+|---|---|---|
+| Sad Mood | ordinal | EMA (self-report) |
+| Anxiousness | ordinal | EMA (self-report) |
+| Energy | ordinal | EMA (self-report) |
+| Total Log Activity (TLAC) | continuous | wrist actigraphy |
+
+with four **diagnostic groups** (Control, MDD, Bipolar I, Bipolar II). The EMA
+domains are observed at only a handful of irregular times per day, while the
+actigraphy is dense — exactly the *asynchronous mixed-type* regime M²FPCA is
+built for.
+
+The workflow is: **(1)** generate the data, **(2)** explore it, then run M²FPCA
+to **(3)** estimate the joint covariance, **(4)** extract shared principal
+components, **(5)** compute subject-level scores as digital biomarkers, and
+**(6)** predict diagnostic group from those scores.
+
+---
+
+# Generate the synthetic data
+
+The generator builds a *partially separable* latent process: all four domains
+share a common set of temporal eigenfunctions (a diurnal *level*, a
+morning–evening *contrast*, and a *circadian* mode), with cross-domain coupling
+entering through the component-score covariances. Group-specific shifts in a few
+score components make the diagnostic groups separable — these are the signal the
+method should recover. The latent curves are then mapped to their observed
+scales (ordinal Likert / continuous actigraphy) and thinned to mimic sparse EMA.
+
+```{r generate}
+sd_file <- file.path(cache, "synthetic_data.rds")
+if (!file.exists(sd_file)) {
+  # 01_generate_synthetic_data.R writes synthetic_data.rds into `cache`
+  Sys.setenv(SDA_OUT = cache)
+  invisible(capture.output(source("01_generate_synthetic_data.R")))
+}
+st <- readRDS(sd_file)
+dat_list <- st$dat_list; type <- st$type; argvals <- st$argvals
+hours <- st$hours; m <- st$m; p <- st$p; n <- st$n
+domains <- st$domains; groups <- st$groups; group <- st$group
+
+data.frame(domain = domains, type = type,
+           row.names = names(dat_list))
+```
+
+We have `r n` synthetic subject-days on a common grid of `r m` intra-day bins
+(07:00–22:00), across `r p` domains and `r length(groups)` diagnostic groups.
+
+---
+
+# Data exploration
+
+Before any modelling, we look at the raw data: how much is observed, what the
+distributions look like, and whether there is any visible cross-domain
+structure.
+
+## Missingness: sparse EMA vs. dense actigraphy
+
+```{r explore-missing}
+obs_frac <- sapply(dat_list, function(X) mean(!is.na(X)))
+obs_per_row <- sapply(dat_list, function(X) round(mean(rowSums(!is.na(X))), 1))
+data.frame(`observed fraction` = round(obs_frac, 2),
+           `avg observed bins/day` = obs_per_row,
+           check.names = FALSE)
+```
+
+The three EMA domains are observed at ~60% of bins (about 7 of 12 per day),
+scattered irregularly, whereas actigraphy covers essentially the whole day. This
+asynchronous pattern is why a pairwise, co-observation–based estimator is needed.
+
+```{r explore-missing-plot, fig.height=3.2}
+op <- par(mfrow = c(1, 4), mar = c(2, 2, 2, 1))
+for (v in 1:p) {
+  image(1:m, 1:min(n, 60), t(!is.na(dat_list[[v]])[1:min(n,60), ]),
+        col = c("grey92", "#2C7FB8"), axes = FALSE, main = domains[v],
+        xlab = "", ylab = "")
+  box()
+}
+par(op)
+```
+
+*Blue = observed, grey = missing, for the first 60 subject-days. The EMA panels
+are sparse and asynchronous; TLAC is nearly complete.*
+
+## Ordinal category distributions
+
+```{r explore-cats}
+cat_tab <- sapply(dat_list[1:3], function(X)
+  round(prop.table(table(factor(X, levels = 0:2))), 2))
+rownames(cat_tab) <- paste("level", 0:2)
+cat_tab
+```
+
+Each EMA domain uses three ordinal levels with reasonable spread — no empty or
+degenerate categories, which the copula margins require.
+
+## Example diurnal trajectories
+
+```{r explore-traj, fig.height=5}
+gcol <- c(Control = "#4D4D4D", MDD = "#1B9E77",
+          `Bipolar I` = "#D95F02", `Bipolar II` = "#7570B3")
+set.seed(3)
+op <- par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+for (v in 1:p) {
+  X <- dat_list[[v]]
+  yl <- if (v == 4) "Total Log Activity" else "ordinal level"
+  plot(NA, xlim = range(hours), ylim = range(X, na.rm = TRUE),
+       xlab = "hour of day", ylab = yl, main = domains[v])
+  for (g in seq_along(groups)) {
+    idx <- sample(which(group == groups[g]), 5)
+    for (i in idx) {
+      xi <- X[i, ]; ok <- !is.na(xi)
+      lines(hours[ok], xi[ok], col = adjustcolor(gcol[g], .5))
+      points(hours[ok], xi[ok], col = gcol[g], pch = 16, cex = .5)
+    }
+  }
+  if (v == 1) legend("topright", names(gcol), col = gcol, lwd = 2,
+                     cex = .7, bty = "n")
+}
+par(op)
+```
+
+Individual curves are noisy and irregularly sampled — the diurnal structure and
+group differences are not obvious by eye. That is the motivation for pooling
+information across subjects with M²FPCA.
+
+## A first look at cross-domain association
+
+A quick, model-free check: the day-level average of each domain per
+subject, and their correlations. (This ignores the functional/temporal structure
+but hints at coupling.)
+
+```{r explore-cor}
+day_means <- sapply(dat_list, function(X) rowMeans(X, na.rm = TRUE))
+round(cor(day_means, use = "pairwise.complete.obs"), 2)
+```
+
+Mood, anxiousness and energy are positively associated; activity relates
+negatively to the low-mood domains. M²FPCA will formalise this as *time-resolved*
+latent correlation surfaces.
+
+---
+
+# Step 1 — Fit M²FPCA
+
+A single call estimates every marginal and cross-covariance surface and assembles
+the partially separable representation (shared temporal eigenbasis + per-component
+cross-variable score covariances). `marginal = "equal"` imposes the
+partial-separability assumption.
+
+```{r fit}
+fit_file <- file.path(cache, "mpf.rds")
+if (file.exists(fit_file)) {
+  fit <- readRDS(fit_file)
+} else {
+  fit <- mpfpca.dir(dat_list, type = type, argvals = argvals,
+                    df = 5, weights = TRUE, min_no_pairs = 15)
+  saveRDS(fit, fit_file)
+}
+cat("shared components retained (L):", fit$L, "\n")
+```
+
+# Step 2 — Shared eigenfunctions and variance explained
+
+Under partial separability all domains share the eigenbasis `phi`. The leading
+modes are interpretable as *diurnal level*, *morning–evening contrast*, and a
+*circadian* return, as reported in the paper.
+
+```{r eigen, fig.height=4}
+phi_hat <- fit$pfpca_results[[1]]$phi
+fve     <- fit$pfpca_results[[1]]$cumFVE
+K <- min(3, ncol(phi_hat)); ecol <- c("#1B9E77", "#D95F02", "#7570B3")
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+matplot(hours, phi_hat[, 1:K], type = "l", lty = 1, lwd = 2.5, col = ecol,
+        xlab = "hour of day", ylab = expression(phi[l](t)),
+        main = "Shared eigenfunctions")
+abline(h = 0, col = "grey70", lty = 3)
+legend("topright", c("PC1: level", "PC2: morning–evening", "PC3: circadian"),
+       col = ecol, lwd = 2.5, cex = .7, bty = "n")
+barplot(fve[1:6], names.arg = paste0("PC", 1:6), col = "#41B6C4", border = NA,
+        ylab = "cumulative FVE (%)", main = "Variance explained", ylim = c(0, 100))
+abline(h = 90, lty = 2, col = "grey30")
+par(op)
+round(data.frame(PC = 1:4, cumulative_FVE = fve[1:4],
+                 lambda = fit$pfpca_results[[1]]$lambda[1:4]), 3)
+```
+
+The first three components already explain **`r round(fve[3],1)`%** of the joint
+variation.
+
+# Step 3 — Covariance recovery vs. ground truth
+
+Because the data come from a known model we can compare the reconstructed latent
+correlation to the analytic truth. We normalise the reconstruction to a
+correlation (unit diagonal) so both are on the same scale.
+
+```{r cov, fig.height=4.5}
+R_hat  <- cov2cor(cov.from.mpfpca.dir(fit))
+# analytic truth: Rbase (x) cov2cor(K),  K = sum_l lambda_l phi_l phi_l'
+phi <- st$phi; lambda <- st$lambda; Rbase <- st$Rbase
+K_true <- Reduce("+", lapply(1:ncol(phi), function(l) lambda[l] * outer(phi[,l], phi[,l])))
+R_true <- kronecker(Rbase, cov2cor(K_true))
+
+heat <- function(M, main) {
+  image(1:nrow(M), 1:ncol(M), M[, ncol(M):1], col = hcl.colors(64, "Blue-Red 3"),
+        zlim = c(-1, 1), axes = FALSE, xlab = "", ylab = "", main = main); box()
+  ab <- (1:(p - 1)) * m + 0.5; abline(v = ab, h = nrow(M) - ab + 1, lwd = 1.4)
+}
+op <- par(mfrow = c(1, 2), mar = c(1, 1, 3, 1))
+heat(R_true, "True latent correlation"); heat(R_hat, "M²FPCA estimate")
+par(op)
+
+rel_err <- norm(R_hat - R_true, "F") / norm(R_true, "F")
+vcor    <- cor(as.numeric(R_hat), as.numeric(R_true))
+cat(sprintf("relative Frobenius error: %.3f  |  cor(vec(true), vec(est)): %.3f\n",
+            rel_err, vcor))
+```
+
+Each `m × m` block is one domain pair; the estimate closely matches the truth
+both on the marginal (diagonal) blocks and the cross blocks.
+
+# Step 4 — Subject-level scores (digital biomarkers)
+
+`mpfpca_scores()` predicts each domain's latent trajectory and projects it onto
+the shared eigenfunctions, giving per-subject component scores. These are the
+candidate *digital biomarkers*.
+
+```{r scores}
+sc_file <- file.path(cache, "scores.rds")
+if (file.exists(sc_file)) {
+  sc <- readRDS(sc_file)
+} else {
+  sc <- mpfpca_scores(dat_list, type, fit, argvals, npc = 4,
+                      ridge = 0.05, impute.missing = TRUE)
+  saveRDS(sc, sc_file)
+}
+
+# mpfpca_scores() labels the p domains V1..Vp; relabel with domain abbreviations
+dom_abbr <- c("Mood", "Anx", "Energy", "TLAC")
+relabel <- function(x) { for (k in seq_along(dom_abbr))
+  colnames(x) <- sub(paste0("^V", k, "_"), paste0(dom_abbr[k], "_"), colnames(x)); x }
+sc$scores      <- lapply(sc$scores, relabel)
+sc$scores_wide <- relabel(sc$scores_wide)
+dim(sc$scores_wide)          # n x (npc * p)
+```
+
+## Cross-domain score correlation recovers the coupling
+
+```{r score-cor}
+round(cor(sc$scores[[1]], use = "pairwise.complete.obs"), 2)
+```
+
+The component-1 scores reproduce the generative coupling: mood–anxiety positive,
+activity negatively related to the low-mood domains.
+
+## Biomarkers separate diagnostic groups
+
+```{r biomarkers, fig.height=3.6}
+sw <- as.data.frame(sc$scores_wide); sw$group <- group
+show <- c("TLAC_PC2", "Energy_PC1", "Energy_PC3")
+labs <- c("Activity morning–evening contrast (PC2)",
+          "Energy diurnal level (PC1)", "Energy circadian (PC3)")
+op <- par(mfrow = c(1, 3), mar = c(7, 4, 3, 1))
+for (k in seq_along(show)) {
+  boxplot(sw[[show[k]]] ~ sw$group, col = gcol[levels(group)], las = 2,
+          xlab = "", ylab = "score", main = labs[k], cex.axis = .8)
+}
+par(op)
+```
+
+As in the paper, the **activity morning–evening contrast** separates Bipolar I
+from Bipolar II, and **energy** components track MDD.
+
+# Step 5 — Multivariate prediction of diagnostic group
+
+Finally we use the component scores as features in a multinomial classifier
+(the analogue of the paper's multinomial-LASSO digital-phenotyping step), with a
+stratified train/test split.
+
+```{r predict}
+suppressMessages(library(nnet))
+feats <- as.data.frame(sc$scores_wide); feats$group <- group
+ok <- complete.cases(sc$scores_wide); feats <- feats[ok, ]
+set.seed(7)
+tr <- unlist(lapply(split(seq_len(nrow(feats)), feats$group),
+                    function(idx) sample(idx, round(0.7 * length(idx)))))
+train <- feats[tr, ]; test <- feats[-tr, ]
+
+fit_mn <- multinom(group ~ ., data = train, trace = FALSE, maxit = 500)
+pred   <- predict(fit_mn, newdata = test)
+acc    <- mean(pred == test$group)
+base   <- max(table(train$group)) / nrow(train)
+cat(sprintf("test accuracy: %.2f   (majority baseline %.2f, chance %.2f)\n",
+            acc, base, 1 / length(groups)))
+```
+
+```{r confusion, fig.height=4.2, fig.width=5}
+cm <- table(true = test$group, predicted = pred)
+image(1:ncol(cm), 1:nrow(cm), t(cm / rowSums(cm))[, nrow(cm):1],
+      col = hcl.colors(32, "YlGnBu", rev = TRUE), zlim = c(0, 1), axes = FALSE,
+      xlab = "predicted", ylab = "true",
+      main = sprintf("Diagnostic-group prediction (acc %.0f%%)", 100 * acc))
+axis(1, 1:ncol(cm), colnames(cm), las = 2, cex.axis = .7, tick = FALSE)
+axis(2, 1:nrow(cm), rev(rownames(cm)), las = 1, cex.axis = .7, tick = FALSE)
+for (a in 1:ncol(cm)) for (b in 1:nrow(cm))
+  text(a, nrow(cm) - b + 1, cm[b, a], cex = 1)
+box()
+cm
+```
+
+The scores predict diagnostic group well above the `r round(100/length(groups))`%
+chance baseline, with the activity-contrast and energy components carrying most
+of the signal.
+
+---
+
+# Summary
+
+Starting from sparse, asynchronous, mixed-type mHealth data, M²FPCA:
+
+- estimated the full joint latent correlation with high fidelity
+  (`cor(vec) ≈ `r round(vcor, 2)``),
+- recovered three interpretable shared diurnal components,
+- produced subject-level scores that reflect the true cross-domain coupling, and
+- yielded digital biomarkers that stratify diagnostic groups.
+
+These numbers are illustrative: the sample is small and the generative model is
+known, so recovery is easier than in the real study. The point is to show the
+**M²FPCA workflow end-to-end on data with the same structure** as the paper.
+
+> **Reproducibility.** The two slow steps (the fit and the latent prediction) are
+> cached under `analysis_cache/`. Delete that folder and re-knit to recompute
+> everything from scratch.
+
+**Citation.** Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026).
+*Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
+Data: An Application to Mood Disorders.* arXiv:2603.11385.
+
+```{r session}
+sessionInfo()
+```

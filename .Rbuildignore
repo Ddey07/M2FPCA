@@ -3,3 +3,6 @@
 ^dev_smoke_test\.R$
 ^BUILD_NOTES\.md$
 ^LICENSE\.md$
+^inst/synthetic_data_analysis/analysis_cache$
+^inst/synthetic_data_analysis/analysis_files$
+^inst/synthetic_data_analysis/output$
