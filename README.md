@@ -123,7 +123,8 @@ latent correlation is `Rcross %x% cov2cor(K)` with
 K_true <- Reduce("+", lapply(1:Lc, function(l) lambda[l] * outer(phi[, l], phi[, l])))
 RK     <- cov2cor(K_true)                 # true shared temporal correlation (m x m)
 R_true <- kronecker(Rcross, RK)           # true (mp x mp) latent correlation
-R_hat  <- cov.from.mpfpca.dir(fit)        # estimated (mp x mp) latent correlation
+# normalise the reconstructed covariance to a correlation (unit diagonal)
+R_hat  <- cov2cor(cov.from.mpfpca.dir(fit))   # estimated (mp x mp) latent correlation
 ```
 
 ``` r

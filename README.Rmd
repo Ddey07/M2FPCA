@@ -128,7 +128,10 @@ correlation is `Rcross %x% cov2cor(K)` with `K = sum_l lambda_l phi_l phi_l'`.
 K_true <- Reduce("+", lapply(1:Lc, function(l) lambda[l] * outer(phi[, l], phi[, l])))
 RK     <- cov2cor(K_true)                 # true shared temporal correlation (m x m)
 R_true <- kronecker(Rcross, RK)           # true (mp x mp) latent correlation
-R_hat  <- cov.from.mpfpca.dir(fit)        # estimated (mp x mp) latent correlation
+# cov.from.mpfpca.dir() returns the reconstructed covariance (its diagonal is the
+# estimated variance surface, ~1 but not exactly 1); normalise to a correlation
+# so it is on the same scale as R_true and has a unit diagonal.
+R_hat  <- cov2cor(cov.from.mpfpca.dir(fit))   # estimated (mp x mp) latent correlation
 ```
 
 ```{r cov-heatmaps, fig.height = 3.4}
