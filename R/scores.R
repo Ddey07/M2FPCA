@@ -25,7 +25,9 @@
 #'   estimated margins). Ignored otherwise.
 #' @param zcap Winsorising cap on the magnitude of latent predictions
 #'   (`Inf` disables); guards against rare blow-ups before projection.
-#' @param impute.missing Logical, passed to `getLatentPreds`.
+#' @param impute.missing Logical, passed to `getLatentPreds`. Defaults to `TRUE`
+#'   (since 0.1.1): with `FALSE`, any unobserved cell leaves an `NA` latent value
+#'   and therefore `NA` scores for that subject.
 #'
 #' @return A list with
 #'   \describe{
@@ -40,7 +42,7 @@
 #'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca_scores <- function(dat_list, type, mpf, argvals, npc = NULL,
-                          ridge = 0.05, zcap = 8, impute.missing = FALSE) {
+                          ridge = 0.05, zcap = 8, impute.missing = TRUE) {
   p <- length(dat_list)
   m <- ncol(dat_list[[1]])
   n <- nrow(dat_list[[1]])
@@ -135,8 +137,11 @@ mpfpca <- function(dat_list, type, argvals, df, min_no_pairs = 30,
     tp <- type[i]
     cov_list[[i]] <- .call_fpca_sgc_lat(dat_list[[i]], type = tp, argvals = argvals,
                                         df = df, min_no_pairs = min_no_pairs, ...)
+    # impute.missing = TRUE as in the research code behind the paper: the
+    # partially separable step needs complete latent trajectories
     z <- .call_getLatentPreds(X = dat_list[[i]], type = rep(tp, m),
-                              lat.cov.est = cov_list[[i]]$cov, ridge = ridge)
+                              lat.cov.est = cov_list[[i]]$cov, ridge = ridge,
+                              impute.missing = TRUE)
     if (is.finite(zcap)) z <- pmin(pmax(z, -zcap), zcap)
     z_list[[i]] <- z
   }

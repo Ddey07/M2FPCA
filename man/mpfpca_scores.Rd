@@ -12,7 +12,7 @@ mpfpca_scores(
   npc = NULL,
   ridge = 0.05,
   zcap = 8,
-  impute.missing = FALSE
+  impute.missing = TRUE
 )
 }
 \arguments{
@@ -33,7 +33,9 @@ estimated margins). Ignored otherwise.}
 \item{zcap}{Winsorising cap on the magnitude of latent predictions
 (\code{Inf} disables); guards against rare blow-ups before projection.}
 
-\item{impute.missing}{Logical, passed to \code{getLatentPreds}.}
+\item{impute.missing}{Logical, passed to \code{getLatentPreds}. Defaults to \code{TRUE}
+(since 0.1.1): with \code{FALSE}, any unobserved cell leaves an \code{NA} latent value
+and therefore \code{NA} scores for that subject.}
 }
 \value{
 A list with

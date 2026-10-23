@@ -235,3 +235,24 @@ eigen_analysis <- function(smoothCov, regGrid, FVEthreshold = 0.99, maxK = NULL,
        cumFVE = FVE,
        kChoosen = no_opt)
 }
+
+# ---- ordinal cutoffs over the full level set ------------------------------
+# Largest observed ordinal code over all columns; codes must be 0, 1, ..., (l-1).
+#' @noRd
+ord_levels <- function(z) {
+  x <- as.numeric(z); x <- x[!is.na(x)]
+  if (!length(x)) stop("an ordinal variable has no observed values.")
+  if (any(x < 0) || any(x != round(x))) stop("ordinal data must be coded as non-negative integers 0, 1, ..., (l-1).")
+  K <- as.integer(max(x))
+  if (K < 1L) stop("an ordinal variable shows a single level; at least two levels are needed.")
+  K
+}
+# qnorm(1 - P(x >= l)), l = 1..K. An absent level gives a repeated cutoff; an
+# empty top level gives +Inf, capped at 8 so the bridge functions stay finite.
+# Identical to the previous construction whenever every level 0..K is observed.
+#' @noRd
+ord_cutoffs <- function(x, K) {
+  d <- vapply(seq_len(K), function(l) qnorm(1 - mean(x >= l, na.rm = TRUE)), numeric(1))
+  d[is.infinite(d)] <- sign(d[is.infinite(d)]) * 8
+  d
+}

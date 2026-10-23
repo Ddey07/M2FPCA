@@ -49,6 +49,9 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
   # sort the pair by type for a canonical bridging branch
   z1 <- dat_list[[order(type)[1]]]
   z2 <- dat_list[[order(type)[2]]]
+  # ordinal level counts over ALL columns (previously read from column 1 only)
+  K1 <- if (sort(type)[1] == "ord") ord_levels(z1) else 0L
+  K2 <- if (sort(type)[2] == "ord") ord_levels(z2) else 0L
   type_orig <- type
   type <- sort(type)
 
@@ -69,14 +72,13 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
       Tj <- bs.argvals[j, ]; Tl <- bs.argvals[l, ]
       hatdelta_j <- qnorm(1 - mean(data1[, j], na.rm = TRUE))
       njl <- sum(!is.na(data1[, j] * data2[, l]))
-      cats_l <- sort(unique(na.omit(data2[, l])))
-      hatdelta_l <- unlist(lapply(cats_l, function(x) qnorm(1 - mean(data2[, l] >= x, na.rm = TRUE))))[-1]
+      hatdelta_l <- ord_cutoffs(data2[, l], K2)
       if (njl > min_no_pairs) {
         tjl <- Kendall_mixed(cbind(data1[, j], data2[, l]))[1, 2]
         c(k = tjl, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
       } else c(k = NA, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
     }
-    ncutoff <- length(sort(unique(na.omit(z2[, 1])))) - 1
+    ncutoff <- K2
     l <- vector(mode = "list", length = ncutoff + 2)
     names(l) <- c("t", "dj", paste0("dl", 1:ncutoff))
     bridge_bo_wrapper <- make_function(args = l, body = quote({
@@ -137,18 +139,16 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
   } else if (type[1] == "ord" & type[2] == "ord") {
     fjl.df <- function(data1, data2, j, l) {
       Tj <- bs.argvals[j, ]; Tl <- bs.argvals[l, ]
-      cats_j <- sort(unique(na.omit(data1[, j])))
-      hatdelta_j <- unlist(lapply(cats_j, function(x) qnorm(1 - mean(data1[, j] >= x, na.rm = TRUE))))[-1]
-      cats_l <- sort(unique(na.omit(data2[, l])))
-      hatdelta_l <- unlist(lapply(cats_l, function(x) qnorm(1 - mean(data2[, l] >= x, na.rm = TRUE))))[-1]
+      hatdelta_j <- ord_cutoffs(data1[, j], K1)
+      hatdelta_l <- ord_cutoffs(data2[, l], K2)
       njl <- sum(!is.na(data1[, j] * data2[, l]))
       if (njl > min_no_pairs) {
         tjl <- Kendall_mixed(cbind(data1[, j], data2[, l]))[1, 2]
         c(k = tjl, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
       } else c(k = NA, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
     }
-    ncutoff1 <- length(sort(unique(na.omit(z1[, 1])))) - 1
-    ncutoff2 <- length(sort(unique(na.omit(z2[, 1])))) - 1
+    ncutoff1 <- K1
+    ncutoff2 <- K2
     l <- vector(mode = "list", length = ncutoff1 + ncutoff2 + 1)
     names(l) <- c("t", paste0("dj", 1:ncutoff1), paste0("dl", 1:ncutoff2))
     bridge_oo_fast_wrapper <- make_function(args = l, body = quote({
@@ -167,8 +167,7 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
   } else if (type[1] == "ord" & type[2] == "trunc") {
     fjl.df <- function(data1, data2, j, l) {
       Tj <- bs.argvals[j, ]; Tl <- bs.argvals[l, ]
-      cats_j <- sort(unique(na.omit(data1[, j])))
-      hatdelta_j <- unlist(lapply(cats_j, function(x) qnorm(1 - mean(data1[, j] >= x, na.rm = TRUE))))[-1]
+      hatdelta_j <- ord_cutoffs(data1[, j], K1)
       hatdelta_l <- qnorm(1 - mean(data2[, l], na.rm = TRUE))
       njl <- sum(!is.na(data1[, j] * data2[, l]))
       if (njl > min_no_pairs) {
@@ -176,7 +175,7 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
         c(k = tjl, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
       } else c(k = NA, Tj, Tl, hatdelta_j, hatdelta_l, njl = njl)
     }
-    ncutoff <- length(sort(unique(na.omit(z1[, 1])))) - 1
+    ncutoff <- K1
     l <- vector(mode = "list", length = ncutoff + 2)
     names(l) <- c("t", paste0("dj", 1:ncutoff), "dl")
     bridge_ot_wrapper <- make_function(args = l, body = quote({
@@ -193,15 +192,14 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
   } else if (type[1] == "cont" & type[2] == "ord") {
     fjl.df <- function(data1, data2, j, l) {
       Tj <- bs.argvals[j, ]; Tl <- bs.argvals[l, ]
-      cats_l <- sort(unique(na.omit(data2[, l])))
-      hatdelta_l <- unlist(lapply(cats_l, function(x) qnorm(1 - mean(data2[, l] >= x, na.rm = TRUE))))[-1]
+      hatdelta_l <- ord_cutoffs(data2[, l], K2)
       njl <- sum(!is.na(data1[, j] * data2[, l]))
       if (njl > min_no_pairs) {
         tjl <- Kendall_mixed(cbind(data1[, j], data2[, l]))[1, 2]
         c(k = tjl, Tj, Tl, hatdelta_l, njl = njl)
       } else c(k = NA, Tj, Tl, hatdelta_l, njl = njl)
     }
-    ncutoff <- length(sort(unique(na.omit(z2[, 1])))) - 1
+    ncutoff <- K2
     l <- vector(mode = "list", length = ncutoff + 1)
     names(l) <- c("t", paste0("dl", 1:ncutoff))
     bridge_co_wrapper <- make_function(args = l, body = quote({
