@@ -1,5 +1,12 @@
 # M2FPCA 0.1.1
 
+* `pfpca_crosscov()`, ordinal x truncated pairs: the truncation threshold is now
+  `qnorm(P(X = 0))`, as in the other truncated bridges. It was computed as
+  `qnorm(1 - mean(x))`, which is not invariant to the marginal transformation
+  and biased the bridged correlation (true 0.5 -> 0.464 in a check with
+  n = 20000; corrected 0.499). This changes M2FPCA estimates for any pair of an
+  ordinal and a truncated variable.
+
 * Requires SGCTools >= 1.1.4. That release fixes `SGCTools::getLatentPreds()`, which
   failed with "'upper' not specified or contains NA" whenever a sparsely observed
   ordinal column did not show every level (typical of EMA sampling). The latent

@@ -168,7 +168,9 @@ pfpca_crosscov <- function(dat_list, type, argvals = NULL,
     fjl.df <- function(data1, data2, j, l) {
       Tj <- bs.argvals[j, ]; Tl <- bs.argvals[l, ]
       hatdelta_j <- ord_cutoffs(data1[, j], K1)
-      hatdelta_l <- qnorm(1 - mean(data2[, l], na.rm = TRUE))
+      # truncation threshold: P(X = 0) = Phi(delta), so delta = qnorm(P(X = 0))
+      # (was qnorm(1 - mean(x)), which is not invariant to the transformation)
+      hatdelta_l <- qnorm(mean(data2[, l] == 0, na.rm = TRUE))
       njl <- sum(!is.na(data1[, j] * data2[, l]))
       if (njl > min_no_pairs) {
         tjl <- Kendall_mixed(cbind(data1[, j], data2[, l]))[1, 2]
