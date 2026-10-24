@@ -1,3 +1,14 @@
+# M2FPCA 0.1.2
+
+* Requires SGCTools >= 1.1.5. That release corrects `SGCTools::Kendall_mixed()`, which
+  undercounted concordant and discordant pairs and pulled the sample Kendall's tau
+  toward zero when few subjects were pairwise observed (about 15% at 10-15
+  subjects, 3-6% at 24-30, under 1% at 100 or more). It now equals Kendall's tau_a
+  exactly. `mpfpca()`, `mpfpca.dir()` and `pfpca_crosscov()` use it for every
+  surface, so their estimates change slightly, most in sparse cells. SGCTools
+  1.1.5 also restores explicit arguments of `bridgeF_tt()`, which 1.1.4 had broken
+  for truncated components in `fpca.sgc.lat()`.
+
 # M2FPCA 0.1.1
 
 * `pfpca_crosscov()`, ordinal x truncated pairs: the truncation threshold is now

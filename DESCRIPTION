@@ -1,7 +1,7 @@
 Package: M2FPCA
 Type: Package
 Title: Multivariate Functional Principal Component Analysis for Mixed-Type Functional Data
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(
     person(given = "Debangan",
            family = "Dey",
@@ -39,7 +39,7 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/Ddey07/M2FPCA
 BugReports: https://github.com/Ddey07/M2FPCA/issues
 Imports:
-    SGCTools (>= 1.1.4),
+    SGCTools (>= 1.1.5),
     fda,
     minpack.lm,
     Matrix,
