@@ -12,6 +12,8 @@ mpfpca(
   min_no_pairs = 30,
   ridge = 0.05,
   zcap = 8,
+  df_marginal = NULL,
+  df_grid = c(4, 5, 6, 8, 10),
   ...
 )
 }
@@ -22,7 +24,8 @@ mpfpca(
 
 \item{argvals}{Numeric vector of length m of argument values (must match the fit).}
 
-\item{df}{Integer; B-spline degrees of freedom per margin.}
+\item{df}{B-spline dimension of the marginal surfaces: one integer for all
+variables, or an integer vector of length \code{p}, one per variable.}
 
 \item{min_no_pairs}{Minimum number of co-observed pairs required per
 (s, t) cell in the marginal covariance fits.}
@@ -34,11 +37,19 @@ estimated margins). Ignored otherwise.}
 \item{zcap}{Winsorising cap on the magnitude of latent predictions
 (\code{Inf} disables); guards against rare blow-ups before projection.}
 
-\item{...}{Passed to the marginal \code{fpca.sgc.lat} calls.}
+\item{df_marginal}{Optional override of \code{df}: \code{NULL} (default; use \code{df}), an
+integer vector of length \code{p} (or 1), or \code{"bic"} to select each marginal
+dimension from \code{df_grid} with \code{\link[=select_df_bic]{select_df_bic()}}, as in \code{\link[=mpfpca.dir]{mpfpca.dir()}}.}
+
+\item{df_grid}{Candidate dimensions used when \code{df_marginal = "bic"}.}
+
+\item{...}{Passed to the marginal \code{fpca.sgc.lat} calls (and, with
+\code{df_marginal = "bic"}, to \code{\link[=select_df_bic]{select_df_bic()}}).}
 }
 \value{
-A list with \code{pf} (the \code{fgm::pfpca} object) and \code{L} (list of latent
-trajectory matrices).
+A list with \code{pf} (the \code{fgm::pfpca} object), \code{L} (list of latent
+trajectory matrices), \code{df_marginal} (dimension used for each variable) and
+\code{bic} (the BIC table when \code{df_marginal = "bic"}, else \code{NULL}).
 }
 \description{
 Two-stage variant: estimate each variable's marginal covariance and latent

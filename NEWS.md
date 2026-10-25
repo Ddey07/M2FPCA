@@ -6,6 +6,10 @@
 * `mpfpca.dir()` gains `df_marginal` (per-variable dimensions, or `"bic"`) and
   `df_grid`. The default `df_marginal = NULL` keeps the previous behaviour.
   The fit now also returns `df_marginal` and, for `"bic"`, the BIC table.
+* `mpfpca()` (ps-M2FPCA) accepts a different `df` for each variable (a vector of
+  length `p`), and the same `df_marginal` / `df_grid` options, including `"bic"`.
+  It now also returns `df_marginal` and `bic`.
+* README: new section "Choosing the spline dimension".
 * `mpfpca.dir()` now passes `...` to every marginal `fpca.sgc.lat()` call, as
   documented; previously it was ignored.
 * The spline fits start from random values, so call `set.seed()` for

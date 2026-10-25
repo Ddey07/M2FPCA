@@ -188,6 +188,45 @@ fit_irr  <- mpfpca.dir(dat_miss, type = type, argvals = argvals, df = 5, min_no_
 fit_irr$L
 ```
 
+## Choosing the spline dimension
+
+Each marginal surface is a tensor-product B-spline of dimension `K`. Both
+`mpfpca.dir()` (M²FPCA) and `mpfpca()` (ps-M²FPCA) let you set it in three ways:
+
+```r
+# 1. one dimension for every surface (the default, df = 5 in mpfpca.dir)
+fit <- mpfpca.dir(dat_list, type, argvals, df = 5)
+
+# 2. your own dimension for each variable's marginal surface
+#    (cross surfaces in mpfpca.dir keep df)
+fit <- mpfpca.dir(dat_list, type, argvals, df = 5, df_marginal = c(10, 8, 6, 10))
+fit_ps <- mpfpca(dat_list, type, argvals, df = c(10, 8, 6, 10))
+
+# 3. automatic: pick each marginal dimension by BIC from a grid
+set.seed(1)   # the spline fits start from random values
+fit <- mpfpca.dir(dat_list, type, argvals, df = 5,
+                  df_marginal = "bic", df_grid = c(4, 5, 6, 8, 10))
+fit$df_marginal   # selected dimension for each variable
+fit$bic           # BIC table (with its log-determinant and quadratic terms)
+```
+
+The BIC is the criterion of the paper's Web Appendix C.4,
+`n log|C_K| + sum_i V_i' C_K^{-1} V_i + K(K+1)/2 log n`, with `V_i` the latent
+BLUP of subject `i`. `select_df_bic()` runs the selection on its own, so you can
+inspect the table first and then pass `sel$df` as `df_marginal`:
+
+```r
+set.seed(1)
+sel <- select_df_bic(dat_list, type, argvals, df_grid = c(4, 5, 6, 8, 10))
+sel$table
+fit <- mpfpca.dir(dat_list, type, argvals, df = 5, df_marginal = sel$df)
+```
+
+BIC selection refits every marginal surface once per candidate, which takes
+about a minute per candidate for an ordinal variable with a few hundred
+subjects. With very sparse binary, ordinal or truncated data the criterion can
+favour larger dimensions than needed, so check the selected surfaces.
+
 ## Function reference
 
 | Function | Purpose |
@@ -198,10 +237,12 @@ fit_irr$L
 | `mpfpca_scores` | Subject multivariate FPC scores (latent prediction + projection) |
 | `mpfpca` | ps-M²FPCA variant (two-stage; needs `fgm`) |
 | `sigma_from_fpca` | Covariance implied by a partially separable FPCA object |
+| `select_df_bic` | Select the spline dimension of each marginal surface by BIC |
 
 `mpfpca.dir()` returns: `pfpca_results` (per-variable `lambda`/`phi`/`cumFVE`),
 `S` (per-component `p × p` score covariances), `L`, `raw_est` (raw block
-covariance), `raw_est_cov` (its delta-method variance), and `cov_marginal`.
+covariance), `raw_est_cov` (its delta-method variance), `cov_marginal`, `df_marginal` (spline dimension of each marginal surface)
+and `bic` (the BIC table when `df_marginal = "bic"`).
 
 ## Citation
 

@@ -114,29 +114,40 @@ sigma_from_fpca <- function(pf) {
 #' concatenated latent predictions. Requires the suggested package \pkg{fgm}.
 #'
 #' @inheritParams mpfpca_scores
-#' @param df Integer; B-spline degrees of freedom per margin.
+#' @param df B-spline dimension of the marginal surfaces: one integer for all
+#'   variables, or an integer vector of length `p`, one per variable.
+#' @param df_marginal Optional override of `df`: `NULL` (default; use `df`), an
+#'   integer vector of length `p` (or 1), or `"bic"` to select each marginal
+#'   dimension from `df_grid` with [select_df_bic()], as in [mpfpca.dir()].
+#' @param df_grid Candidate dimensions used when `df_marginal = "bic"`.
 #' @param min_no_pairs Minimum number of co-observed pairs required per
 #'   (s, t) cell in the marginal covariance fits.
-#' @param ... Passed to the marginal `fpca.sgc.lat` calls.
-#' @return A list with `pf` (the `fgm::pfpca` object) and `L` (list of latent
-#'   trajectory matrices).
+#' @param ... Passed to the marginal `fpca.sgc.lat` calls (and, with
+#'   `df_marginal = "bic"`, to [select_df_bic()]).
+#' @return A list with `pf` (the `fgm::pfpca` object), `L` (list of latent
+#'   trajectory matrices), `df_marginal` (dimension used for each variable) and
+#'   `bic` (the BIC table when `df_marginal = "bic"`, else `NULL`).
 #' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
 #'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
 #'   Data: An Application to Mood Disorders." \emph{arXiv:2603.11385}.
 #'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca <- function(dat_list, type, argvals, df, min_no_pairs = 30,
-                   ridge = 0.05, zcap = 8, ...) {
+                   ridge = 0.05, zcap = 8, df_marginal = NULL,
+                   df_grid = c(4, 5, 6, 8, 10), ...) {
   if (!requireNamespace("fgm", quietly = TRUE)) {
     stop("ps-M2FPCA requires the 'fgm' package. Install it with install.packages('fgm').")
   }
   p <- length(dat_list)
   m <- ncol(dat_list[[1]])
+  rd <- .resolve_df_marginal(dat_list, type, argvals, df, df_marginal, df_grid,
+                             weights = TRUE, min_no_pairs = min_no_pairs, ...)
   cov_list <- z_list <- vector("list", p)
   for (i in 1:p) {
     tp <- type[i]
-    cov_list[[i]] <- .call_fpca_sgc_lat(dat_list[[i]], type = tp, argvals = argvals,
-                                        df = df, min_no_pairs = min_no_pairs, ...)
+    cov_list[[i]] <- if (!is.null(rd$pre_fits[[i]]) && isTRUE(rd$df[i] == rd$pre_df[i])) rd$pre_fits[[i]] else
+      .call_fpca_sgc_lat(dat_list[[i]], type = tp, argvals = argvals,
+                         df = rd$df[i], min_no_pairs = min_no_pairs, ...)
     # impute.missing = TRUE as in the research code behind the paper: the
     # partially separable step needs complete latent trajectories
     z <- .call_getLatentPreds(X = dat_list[[i]], type = rep(tp, m),
@@ -146,5 +157,5 @@ mpfpca <- function(dat_list, type, argvals, df, min_no_pairs = 30,
     z_list[[i]] <- z
   }
   partial_fsgc <- fgm::pfpca(z_list)
-  list(pf = partial_fsgc, L = z_list)
+  list(pf = partial_fsgc, L = z_list, df_marginal = rd$df, bic = rd$bic)
 }

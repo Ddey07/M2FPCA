@@ -85,3 +85,22 @@ test_that("mpfpca.dir accepts a different dimension for each margin", {
   expect_true(all(is.finite(f$raw_est)))
   expect_true(all(is.finite(f$raw_est_cov)))
 })
+
+test_that("ps-M2FPCA (mpfpca) accepts per-variable dimensions and BIC selection", {
+  skip_if_not_installed("fgm")
+  d <- make_bic_data(seed = 8)
+  set.seed(14); a <- suppressWarnings(mpfpca(d$dat, d$type, d$argvals, df = 4, min_no_pairs = 10))
+  set.seed(14); b <- suppressWarnings(mpfpca(d$dat, d$type, d$argvals, df = c(4, 4), min_no_pairs = 10))
+  expect_identical(a$L, b$L)
+  expect_equal(a$df_marginal, c(4L, 4L))
+  expect_null(a$bic)
+  set.seed(15); v <- suppressWarnings(mpfpca(d$dat, d$type, d$argvals, df = c(4, 6), min_no_pairs = 10))
+  expect_equal(v$df_marginal, c(4L, 6L))
+  expect_true(all(is.finite(sigma_from_fpca(v$pf))))
+  set.seed(16); sel <- suppressWarnings(select_df_bic(d$dat, d$type, d$argvals, df_grid = c(4, 6), min_no_pairs = 10))
+  set.seed(16); w <- suppressWarnings(mpfpca(d$dat, d$type, d$argvals, df = 4, min_no_pairs = 10,
+                                             df_marginal = "bic", df_grid = c(4, 6)))
+  expect_equal(w$df_marginal, sel$df)
+  expect_false(is.null(w$bic))
+  expect_error(mpfpca(d$dat, d$type, d$argvals, df = c(4, 5, 6)), "'df'")
+})

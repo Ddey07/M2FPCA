@@ -69,23 +69,9 @@ mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
   bs.argvals <- bs_eval(df)
 
   # spline dimension of each marginal surface
-  bic <- NULL; pre_fits <- vector("list", p); pre_df <- rep(NA_integer_, p)
-  if (is.null(df_marginal)) {
-    df_m <- rep(as.integer(df), p)
-  } else if (identical(df_marginal, "bic")) {
-    sel <- select_df_bic(dat_list, type, argvals, df_grid = df_grid, weights = weights,
-                         min_no_pairs = min_no_pairs, ...)
-    bic <- sel$table
-    df_m <- as.integer(ifelse(is.na(sel$df), df, sel$df))
-    if (anyNA(sel$df)) warning("BIC selection failed for variable(s) ", paste(which(is.na(sel$df)), collapse = ", "),
-                               "; using df = ", df, " for their marginal surfaces.", call. = FALSE)
-    pre_fits <- sel$fits; pre_df <- sel$df
-  } else {
-    if (!is.numeric(df_marginal) || !length(df_marginal) %in% c(1, p) || anyNA(df_marginal) ||
-        any(df_marginal != round(df_marginal)) || any(df_marginal < 4))
-      stop("'df_marginal' must be NULL, \"bic\", or whole numbers of at least 4, of length 1 or p.")
-    df_m <- rep_len(as.integer(df_marginal), p)
-  }
+  if (!is.numeric(df) || length(df) != 1) stop("'df' must be a single number; use 'df_marginal' for per-variable dimensions.")
+  rd <- .resolve_df_marginal(dat_list, type, argvals, df, df_marginal, df_grid, weights, min_no_pairs, ...)
+  df_m <- rd$df; bic <- rd$bic; pre_fits <- rd$pre_fits; pre_df <- rd$pre_df
 
   cov_list <- pfpca_list <- list()
   Shat <- matrix(NA_real_, ncol = m * p, nrow = m * p)

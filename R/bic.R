@@ -121,3 +121,34 @@ select_df_bic <- function(dat_list, type, argvals, df_grid = c(4, 5, 6, 8, 10),
   quad <- sum(backsolve(R, t(V), transpose = TRUE)^2)
   c(bic = logdet + quad + K * (K + 1) / 2 * log(n), logdet = logdet, quad = quad, n = n)
 }
+
+## Resolve the spline dimension of each marginal surface for mpfpca.dir() and mpfpca().
+## Returns df (integer, length p), the BIC table (or NULL), and pre-computed fits to reuse.
+#' @noRd
+.resolve_df_marginal <- function(dat_list, type, argvals, df, df_marginal, df_grid,
+                                 weights, min_no_pairs, ...) {
+  p <- length(dat_list)
+  check <- function(x, what) {
+    if (!is.numeric(x) || !length(x) %in% c(1, p) || anyNA(x) || any(x != round(x)) || any(x < 4))
+      stop("'", what, "' must be whole numbers of at least 4, of length 1 or ", p, ".", call. = FALSE)
+  }
+  check(df, "df")
+  base <- rep_len(as.integer(df), p)
+  pre_fits <- vector("list", p); pre_df <- rep(NA_integer_, p); bic <- NULL
+  if (is.null(df_marginal)) {
+    out <- base
+  } else if (identical(df_marginal, "bic")) {
+    sel <- select_df_bic(dat_list, type, argvals, df_grid = df_grid, weights = weights,
+                         min_no_pairs = min_no_pairs, ...)
+    bic <- sel$table; pre_fits <- sel$fits; pre_df <- sel$df
+    out <- ifelse(is.na(sel$df), base, sel$df)
+    if (anyNA(sel$df)) warning("BIC selection failed for variable(s) ", paste(which(is.na(sel$df)), collapse = ", "),
+                               "; using df = ", paste(base[is.na(sel$df)], collapse = ", "),
+                               " for their marginal surfaces.", call. = FALSE)
+  } else {
+    if (is.character(df_marginal)) stop("'df_marginal' must be NULL, \"bic\", or whole numbers.", call. = FALSE)
+    check(df_marginal, "df_marginal")
+    out <- rep_len(as.integer(df_marginal), p)
+  }
+  list(df = as.integer(out), bic = bic, pre_fits = pre_fits, pre_df = pre_df)
+}
