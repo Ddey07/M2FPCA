@@ -23,14 +23,20 @@
 #'   variables on a common grid. `NA`s allowed (irregular sampling).
 #' @param type Character vector of length `p`, each `"cont"`/`"trunc"`/`"ord"`/`"bin"`.
 #' @param argvals Numeric vector of length m of argument (time) values.
-#' @param df Integer; B-spline degrees of freedom per margin.
+#' @param df Integer; B-spline degrees of freedom of the cross-covariance
+#'   surfaces, and of the marginal surfaces unless `df_marginal` is given.
+#' @param df_marginal Optional spline dimension of the marginal surfaces: `NULL`
+#'   (default; use `df`), an integer vector of length `p` (or 1), or `"bic"` to
+#'   select each marginal dimension from `df_grid` with [select_df_bic()].
+#' @param df_grid Candidate dimensions used when `df_marginal = "bic"`.
 #' @param marginal Either `"equal"` (default; shared eigenbasis from the averaged
 #'   marginal covariance, i.e. the partial-separability assumption) or any other
 #'   value to use each variable's own eigenbasis.
 #' @param weights Logical; weight the NLS objective by the number of co-observed
 #'   pairs (recommended, especially for irregular data).
 #' @param min_no_pairs Minimum co-observed pairs per (s, t) cell.
-#' @param ... Passed through to the marginal `fpca.sgc.lat` calls.
+#' @param ... Passed to the marginal `fpca.sgc.lat` calls (and, with
+#'   `df_marginal = "bic"`, to [select_df_bic()]).
 #'
 #' @return A list with
 #'   \describe{
@@ -40,6 +46,8 @@
 #'     \item{L}{number of components}
 #'     \item{raw_est}{the raw (mp)-by-(mp) block covariance estimate}
 #'     \item{raw_est_cov}{delta-method variance of `raw_est` (vectorised)}
+#'     \item{df_marginal}{spline dimension used for each marginal surface}
+#'     \item{bic}{the BIC table from [select_df_bic()] when `df_marginal = "bic"`, else `NULL`}
 #'   }
 #' @references Dey, D., Ghosal, R., Merikangas, K., & Zipunnikov, V. (2026)
 #'   "Multivariate Functional Principal Component Analysis for Mixed-Type mHealth
@@ -47,17 +55,37 @@
 #'   \url{https://arxiv.org/abs/2603.11385}
 #' @export
 mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
-                       weights = TRUE, min_no_pairs = 30, ...) {
+                       weights = TRUE, min_no_pairs = 30, df_marginal = NULL,
+                       df_grid = c(4, 5, 6, 8, 10), ...) {
   p <- length(dat_list)
   m <- ncol(dat_list[[1]])
   n <- nrow(dat_list[[1]])
 
-  knotsT <- seq(min(argvals), max(argvals), l = df - 2)
-  norder <- 4
-  nbasisT <- length(knotsT) + norder - 2
-  dayrngT <- c(min(argvals), max(argvals))
-  bbasisT <- create.bspline.basis(dayrngT, nbasisT, norder, knotsT)
-  bs.argvals <- eval.basis(argvals, bbasisT)
+  bs_eval <- function(K) {
+    knotsT <- seq(min(argvals), max(argvals), l = K - 2)
+    bbasisT <- create.bspline.basis(c(min(argvals), max(argvals)), length(knotsT) + 2, 4, knotsT)
+    eval.basis(argvals, bbasisT)
+  }
+  bs.argvals <- bs_eval(df)
+
+  # spline dimension of each marginal surface
+  bic <- NULL; pre_fits <- vector("list", p); pre_df <- rep(NA_integer_, p)
+  if (is.null(df_marginal)) {
+    df_m <- rep(as.integer(df), p)
+  } else if (identical(df_marginal, "bic")) {
+    sel <- select_df_bic(dat_list, type, argvals, df_grid = df_grid, weights = weights,
+                         min_no_pairs = min_no_pairs, ...)
+    bic <- sel$table
+    df_m <- as.integer(ifelse(is.na(sel$df), df, sel$df))
+    if (anyNA(sel$df)) warning("BIC selection failed for variable(s) ", paste(which(is.na(sel$df)), collapse = ", "),
+                               "; using df = ", df, " for their marginal surfaces.", call. = FALSE)
+    pre_fits <- sel$fits; pre_df <- sel$df
+  } else {
+    if (!is.numeric(df_marginal) || !length(df_marginal) %in% c(1, p) || anyNA(df_marginal) ||
+        any(df_marginal != round(df_marginal)) || any(df_marginal < 4))
+      stop("'df_marginal' must be NULL, \"bic\", or whole numbers of at least 4, of length 1 or p.")
+    df_m <- rep_len(as.integer(df_marginal), p)
+  }
 
   cov_list <- pfpca_list <- list()
   Shat <- matrix(NA_real_, ncol = m * p, nrow = m * p)
@@ -67,11 +95,13 @@ mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
   # marginal covariance surfaces + their delta-method variances
   for (i in 1:p) {
     tp <- type[i]
-    cov_list[[i]] <- .call_fpca_sgc_lat(dat_list[[i]], type = tp, weights = weights,
-                                        argvals = argvals, df = df, min_no_pairs = min_no_pairs)
+    cov_list[[i]] <- if (!is.null(pre_fits[[i]]) && isTRUE(df_m[i] == pre_df[i])) pre_fits[[i]] else
+      .call_fpca_sgc_lat(dat_list[[i]], type = tp, weights = weights,
+                         argvals = argvals, df = df_m[i], min_no_pairs = min_no_pairs, ...)
     Chat2 <- as.matrix(cov_list[[i]]$cov)
+    bs_i <- if (df_m[i] == df) bs.argvals else bs_eval(df_m[i])
     D1 <- diag(as.numeric(ginv_deriv(Chat2))) %*%
-      (kronecker(bs.argvals, diag(m)) %*% kronecker(diag(df), bs.argvals)) %*% up.elim.diag(df)
+      (kronecker(bs_i, diag(m)) %*% kronecker(diag(df_m[i]), bs_i)) %*% up.elim.diag(df_m[i])
     V_c <- D1 %*% as.matrix(cov_list[[i]]$vcov) %*% t(D1)
     idx <- ((i - 1) * m + 1):(i * m)
     idx2 <- as.numeric(MV[idx, idx])
@@ -128,7 +158,7 @@ mpfpca.dir <- function(dat_list, type, argvals, df = 5, marginal = "equal",
   list(pfpca_results = pfpca_list, S = S_list, L = L,
        raw_est = Shat, raw_est_cov = Shat_vcov,
        cov_marginal = lapply(cov_list, function(x) as.matrix(x$cov)),
-       argvals = argvals)
+       argvals = argvals, df_marginal = df_m, bic = bic)
 }
 
 #' Reconstruct the multivariate covariance from an mpfpca.dir fit

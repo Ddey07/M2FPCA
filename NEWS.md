@@ -1,3 +1,16 @@
+# M2FPCA 0.1.3
+
+* New `select_df_bic()`: selects the spline dimension of each marginal surface
+  from a grid of candidates by the BIC of the paper (Web Appendix C.4),
+  `n log|C| + sum_i V_i' C^{-1} V_i + K(K+1)/2 log n`, with the latent BLUP `V_i`.
+* `mpfpca.dir()` gains `df_marginal` (per-variable dimensions, or `"bic"`) and
+  `df_grid`. The default `df_marginal = NULL` keeps the previous behaviour.
+  The fit now also returns `df_marginal` and, for `"bic"`, the BIC table.
+* `mpfpca.dir()` now passes `...` to every marginal `fpca.sgc.lat()` call, as
+  documented; previously it was ignored.
+* The spline fits start from random values, so call `set.seed()` for
+  reproducible results.
+
 # M2FPCA 0.1.2
 
 * Requires SGCTools >= 1.1.5. That release corrects `SGCTools::Kendall_mixed()`, which

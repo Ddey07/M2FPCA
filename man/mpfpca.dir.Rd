@@ -12,6 +12,8 @@ mpfpca.dir(
   marginal = "equal",
   weights = TRUE,
   min_no_pairs = 30,
+  df_marginal = NULL,
+  df_grid = c(4, 5, 6, 8, 10),
   ...
 )
 }
@@ -23,7 +25,8 @@ variables on a common grid. \code{NA}s allowed (irregular sampling).}
 
 \item{argvals}{Numeric vector of length m of argument (time) values.}
 
-\item{df}{Integer; B-spline degrees of freedom per margin.}
+\item{df}{Integer; B-spline degrees of freedom of the cross-covariance
+surfaces, and of the marginal surfaces unless \code{df_marginal} is given.}
 
 \item{marginal}{Either \code{"equal"} (default; shared eigenbasis from the averaged
 marginal covariance, i.e. the partial-separability assumption) or any other
@@ -34,7 +37,14 @@ pairs (recommended, especially for irregular data).}
 
 \item{min_no_pairs}{Minimum co-observed pairs per (s, t) cell.}
 
-\item{...}{Passed through to the marginal \code{fpca.sgc.lat} calls.}
+\item{df_marginal}{Optional spline dimension of the marginal surfaces: \code{NULL}
+(default; use \code{df}), an integer vector of length \code{p} (or 1), or \code{"bic"} to
+select each marginal dimension from \code{df_grid} with \code{\link[=select_df_bic]{select_df_bic()}}.}
+
+\item{df_grid}{Candidate dimensions used when \code{df_marginal = "bic"}.}
+
+\item{...}{Passed to the marginal \code{fpca.sgc.lat} calls (and, with
+\code{df_marginal = "bic"}, to \code{\link[=select_df_bic]{select_df_bic()}}).}
 }
 \value{
 A list with
@@ -45,6 +55,8 @@ component scores across variables}
 \item{L}{number of components}
 \item{raw_est}{the raw (mp)-by-(mp) block covariance estimate}
 \item{raw_est_cov}{delta-method variance of \code{raw_est} (vectorised)}
+\item{df_marginal}{spline dimension used for each marginal surface}
+\item{bic}{the BIC table from \code{\link[=select_df_bic]{select_df_bic()}} when \code{df_marginal = "bic"}, else \code{NULL}}
 }
 }
 \description{
